@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulatore Vendibilità Immobile</title>
+
+<style>
+body
+{font-family:Segoe UI,Arial,sans-serif;
+background:#eef2f5;padding:12px}
+.container{
+max-width:1200px;
+margin:auto;
+background:#fff;
+padding:4px;
+border-radius:10px;
+box-shadow:0 5px 15px rgba(0,0,0,.15)
+}
+table{
+width:100%;border-collapse:
+collapse}td,
+th{border:1px solid #ccc;
+padding:2px}
+th{background:#d9d9d9}
+
+.card{
+margin-top:6px;
+border:1px solid #ddd;
+border-radius:8px;
+padding:10px;
+}
+
+.semaforo{
+    margin-top:4px;
+    margin-bottom:4px;
+    padding:6px;
+    border-radius:8px;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    border:1px solid #d8d8d8;
+}
+.green{
+background:#d4edda}
+.yellow{
+background:#fff3cd}
+.red{
+background:#f8d7da}
+input,select
+{padding:6px;
+width:100%;
+box-sizing:border-box}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+<div class="container">
+<h1 style="
+text-align:center;
+background:#f5f5f5;
+border:1px solid #dcdcdc;
+border-radius:8px;
+padding:8px;
+margin-bottom:8px;
+font-size:24px;
+font-weight:bold;
+color:#444;">
+🏠 SIMULATORE VENDIBILITÀ IMMOBILE
+</h1>
+<div style="text-align:center;margin-bottom:8px;">
+
+<button onclick="scaricaPDF()" style="
+background:#28a745;
+color:white;
+border:none;
+padding:6px 6px;
+border-radius:6px;
+font-size:12px;
+font-weight:bold;
+cursor:pointer;">
+
+💾 SALVA PDF
+
+</button>
+
+</div>
+<p>Scopri chi può comprare la tua casa, quanto deve guadagnare e in quanto tempo potresti venderla.
+</p><table>
+<tr>
+<th colspan="2">INPUT</th>
+</tr><tr><td>Prezzo richiesto
+</td><td><input id="prezzo" value="160.000 €">
+</td></tr><tr><td>Mutuo</td><td>
+<select id="mutuoPerc">
+<option value="0">0%</option>
+<option value="0.5">50%</option>
+<option value="0.6">60%</option>
+<option value="0.7">70%</option>
+<option value="0.8" selected>80%</option>
+<option value="0.9">90%</option>
+<option value="1">100%</option>
+</select>
+</option></select></td></tr><tr><td>Durata mutuo</td><td><select id="anni">
+<option selected>20</option>
+<option>25</option>
+<option>30</option>
+</select>
+</option></select></td></tr><tr><td>Tasso %</td><td><input id="tasso" type="number" step="0.1" value="4.5"></td></tr>
+</table><div class="card"><p><b>Mutuo:</b> <span id="mutuo">
+</span></p><p><b>Rata mensile:</b> <span id="rata"></span></p><p>
+<b>Reddito minimo:</b> <span id="reddito"></span></p><p><b>Capitale iniziale minimo (comprensivo di eventuale anticipo, imposte, notaio, agenzia e spese accessorie):</b> <span id="capitale"></span></p><p>
+<b>Vendibilità stimata:</b> <span id="vendibilitaMain"></span></p><p><b>Tempo medio di vendita:</b> <span id="tempoMain"></span></p><p><b>Target:</b> <span id="target"></span></p></div>
+<div style="
+text-align:center;
+font-size:20px;
+font-weight:bold;
+margin-top:4px;
+margin-bottom:4px;
+letter-spacing:1px;
+color:#444;
+">
+</div>
+
+<div id="semaforo" class="semaforo"></div>
+<div class="card">
+<h3>POSSIBILI SCENARI</h3>
+<div id="ribasso"></div>
+</div>
+
+<div class="card" style="
+font-size:11px;
+color:#666;
+text-align:center;
+line-height:1.5;
+">
+
+<div style="
+display:flex;
+justify-content:space-between;
+flex-wrap:wrap;
+font-size:12px;
+font-weight:bold;
+margin-bottom:4px;
+">
+
+<div>Versione 4.0 Pro</div>
+<div>ott-2026</div>
+<div>© 2026 Realizzato da Fabio Bellino</div>
+
+</div>
+
+⚠️ Il presente simulatore ha finalità esclusivamente informative e non costituisce consulenza immobiliare, finanziaria o vincolo contrattuale.
+
+<br>
+
+⚠️ I risultati rappresentano stime indicative basate sui parametri inseriti e non garantiscono tempi di vendita, valori di mercato o conclusione della compravendita.
+
+<br>
+
+⚠️ È vietata la copia, distribuzione o modifica del presente simulatore senza autorizzazione.
+
+</div>
+
+</div>
+<script>function numEuro(v){return Number(v.toString().replace(/\./g,'').replace(/€/g,'').replace(/\s/g,'').replace(',','.'))}function eur(v){return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v)}function fmt(el){let n=numEuro(el.value);if(!isNaN(n))el.value=eur(n)}
+function punteggioReddito(redd){
+
+    if(redd > 3500) return 1;      // 🔴
+    if(redd > 2500) return 2;      // 🟡
+    if(redd > 1800) return 3;      // 🟢
+    return 4;                      // 🟢🟢
+
+}
+
+function punteggioCapitale(cap){
+
+    if(cap > 120000) return 1;     // 🔴
+    if(cap > 70000) return 2;      // 🟡
+    if(cap > 50000) return 3;      // 🟢
+    return 4;                      // 🟢🟢
+
+}
+
+function classeFinale(redd,cap){
+
+    let scoreReddito =
+        punteggioReddito(redd);
+
+    let scoreCapitale =
+        punteggioCapitale(cap);
+
+    let score =
+        Math.min(
+            scoreReddito,
+            scoreCapitale
+        );
+
+    if(score === 1)
+        return ['🔴 Bassa','🔴 >12 mesi'];
+
+    if(score === 2)
+        return ['🟡 Media','🟡 6-12 mesi'];
+
+    if(score === 3)
+        return ['🟢 Alta','🟢 3-6 mesi'];
+
+    return ['🟢🟢 Molto Alta','🟢🟢 1-3 mesi'];
+
+}
+function calcola(){
+let prezzo=numEuro(prezzoEl.value);
+let mp=+mutuoPerc.value;
+let anni=+document.getElementById('anni').value;
+let t=+tasso.value/100/12;
+let mutuo=prezzo*mp;let n=anni*12;
+let rata=t===0?mutuo/n:mutuo*(t/(1-Math.pow(1+t,-n)));
+let redd=rata/0.30;
+let cap=(prezzo-mutuo)+(prezzo*0.1);
+mutuoSpan.textContent =
+new Intl.NumberFormat('it-IT').format(Math.round(mutuo))
++ ' €';
+
+rataSpan.textContent =
+new Intl.NumberFormat('it-IT').format(Math.round(rata))
++ ' €';
+
+redditoSpan.textContent =
+new Intl.NumberFormat('it-IT').format(Math.round(redd))
++ ' €';
+
+capitaleSpan.textContent =
+new Intl.NumberFormat('it-IT').format(Math.round(cap))
++ ' €';
+if(cap > 120000 || redd > 3500){
+
+    target.innerHTML =
+    'Manager / Dirigente / Imprenditore';
+
+}
+else if(cap > 70000 || redd > 2500){
+
+    target.innerHTML =
+    'Famiglia consolidata / Professionista';
+
+}
+else if(cap > 50000 || redd > 1800){
+
+    target.innerHTML =
+    'Coppia doppio reddito / Famiglia giovane';
+
+}
+else{
+
+    target.innerHTML =
+    'Single / Giovane coppia / Investitore';
+
+}let c =
+classeFinale(
+    redd,
+    cap
+);
+vendibilitaMain.innerHTML=c[0];
+tempoMain.innerHTML=c[1];
+semaforo.className='semaforo '+(c[0].includes('Bassa')?'red':c[0].includes('Media')?'yellow':'green');
+semaforo.innerHTML =
+'🏠 STIMA VENDIBILITÀ: ' + c[0];
+let h='<table><tr><th>Prezzo</th><th>Reddito Minimo</th><th>Vendibilità</th><th>Platea</th><th>Tempistiche</th></tr>';
+for(let i=0;i<5;i++){let p=prezzo-(i*10000);if(p<=0)continue;let m=p*mp;let rr=t===0?m/n:m*(t/(1-Math.pow(1+t,-n)));let r=rr/0.30;let capSim =
+    (p-m)
+    +
+    (p*0.1);
+
+let cl =
+classeFinale(
+    r,
+    capSim
+);
+let platea = '';
+
+if(cl[0].includes('Molto Alta'))
+    platea = '👨‍👩‍👧‍👦 Molto Ampia';
+
+else if(cl[0].includes('Alta'))
+    platea = '👨‍👩‍👧‍👦 Ampia';
+
+else if(cl[0].includes('Media'))
+    platea = '👨‍👩‍👧 Selettiva';
+
+else
+    platea = '👔 Molto Limitata';
+h+='<tr '+(i===0?'style="background:#dff0d8;font-weight:bold"':'')+
+'><td>'+
+new Intl.NumberFormat('it-IT').format(Math.round(p))
++' €</td><td>'+
+new Intl.NumberFormat('it-IT').format(Math.round(r))
++' €</td><td>'+
+cl[0]+
+'</td><td>'+
+platea+
+'</td><td>'+
+cl[1]+
+'</td></tr>';
+}h+='</table>';ribasso.innerHTML=h;}const prezzoEl=document.getElementById('prezzo');const mutuoSpan=document.getElementById('mutuo');const rataSpan=document.getElementById('rata');const redditoSpan=document.getElementById('reddito');const capitaleSpan=document.getElementById('capitale');document.querySelectorAll('input,select').forEach(e=>{e.addEventListener('input',calcola);e.addEventListener('change',calcola)});prezzoEl.addEventListener('blur',function(){fmt(this);calcola()});fmt(prezzoEl);calcola();function scaricaPDF(){
+
+    let element =
+    document.querySelector(".container");
+
+    let oggi =
+    new Date()
+    .toLocaleDateString("it-IT");
+
+    let opt = {
+
+        margin:5,
+
+        filename:
+        "Stima_Vendibilita_" +
+        oggi.replace(/\//g,"-") +
+        ".pdf",
+
+        image:{
+            type:'jpeg',
+            quality:0.98
+        },
+
+        html2canvas:{
+            scale:2
+        },
+
+        jsPDF:{
+            unit:'mm',
+            format:'a4',
+            orientation:'portrait'
+        }
+
+    };
+
+    html2pdf()
+        .set(opt)
+        .from(element)
+        .save();
+
+}
+
+</script>
